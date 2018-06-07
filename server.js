@@ -3,6 +3,8 @@ const bodyParser = require('body-parser');
 const orm = require('orm');
 const handlebars = require('express-handlebars');
 const app = express();
+const levenshtein = require('fast-levenshtein');
+
 
 // log request method and paths to console
 app.use((req, res, next) => {
@@ -18,6 +20,8 @@ app.use(orm.express('mysql://eltodo:password@localhost/eltodo', {
 	define: require('./database')
 }));
 
+// install json api
+require('./api')(app);
 
 app.engine('handlebars', handlebars({defaultLayout: 'main'}));
 app.set('view engine', 'handlebars');
@@ -25,14 +29,51 @@ app.set('view engine', 'handlebars');
 // start the server
 app.listen(3000);
 
+// serve all files in /static as direct files
+app.use('/static', express.static('static'))
+
 app.get('/', (req, res, next) => {
-	res.render('home');
+	res.redirect('/lists');
 });
 
 app.get('/lists', (req, res, next) => {
+	
 	req.models.lists.allAsync().then((lists)=> {
-		res.render('lists/list', { lists: lists });
+		var matchingList = [];
+		if (req.query.search != undefined) {
+			var searchWords = req.query.search.split(' ');
+			console.log(searchWords);
+			// perform search on items
+			lists.forEach((list) => {
+				var matchWords = list.name.split();
+				matchWords = matchWords.concat(list.description.split());
+				list.items.forEach((item) => { matchWords = matchWords.concat(item.title.split()); });
+				console.log(matchWords);
+				var matchedAny = false;
+				matchWords.forEach((matchWord) => {
+					searchWords.forEach((searchWord) => {
+						if (matchedAny) return;
+						if (matchWord.includes(searchWord)) {
+							matchedAny = true;
+						}
+						var distance = levenshtein.get(searchWord, matchWord);
+						console.log(matchWord, searchWord, distance);
+						if (distance < (Math.max(searchWord.length, matchWord.length) * 0.2)) {
+							matchedAny = true;
+						}				
+					});
+				});
+				if (matchedAny) {
+					matchingList.push(list);
+				}
+			});
+		} else {
+			matchingList = lists;
+		}
+		
+		res.render('lists/list', { query: req.query.search, lists: matchingList });
 	}).catch(next);
+	
 });
 
 app.post('/lists/new', (req, res, next) => {
@@ -55,6 +96,7 @@ app.post('/lists/:id', (req, res, next) => {
 	req.models.lists.getAsync(req.params.id)
 		.then((list) => {
 			list.name = req.body.name;
+			list.description = req.body.description;
 			list.saveAsync().then(() => {
 				res.render('lists/edit', list);
 			});
@@ -85,10 +127,11 @@ app.post('/lists/:id/delete', (req, res, next) => {
 app.post('/lists/:list_id/items/:item_id', (req, res, next) => {
 	req.models.items.getAsync(req.params.item_id)
 		.then((item) => {
+			console.log(req.body);
 			if (req.body.name != undefined)
 				item.name = req.body.name;
-			if (req.body.completed != undefined)
-				item.completed = req.body.completed;
+			if (req.body.completed !== undefined)
+				item.completed = req.body.completed == 'true';
 			return item.saveAsync();
 		}).then((item) => {
 			res.send(JSON.stringify(item))
@@ -100,6 +143,24 @@ app.post('/lists/:list_id/items/:item_id/delete', (req, res, next) => {
 		.then((item) => item.removeAsync())
 		.then(() => res.redirect("/lists/" + req.params.list_id))
 		.catch(next);
+});
+
+
+// login
+app.get('/auth', (req, res, next) => {
+	
+});
+
+app.post('/auth/login', (req, res, next) => {
+	
+});
+
+app.post('/auth/register', (req, res, next) => {
+	
+});
+
+app.get('/auth/logout', (req, res, next) => {
+	
 });
 
 // final handler, gets called when previous things passed an error

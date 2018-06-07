@@ -1,33 +1,46 @@
-<h1> List: {{name}} </h1>
-
-<h2> Edit </h2>
-
-<form action="/lists/{{id}}" method="POST">
-	Name: <input type="text" placeholder="name" name="name" value="{{name}}">
-	<button type="submit">Update</button>
-</form>
-
-<form action="/lists/{{id}}/delete" method="POST">
-	<button type="submit">Delete</button>
-</form>
-
-
-
-<h2>Items</h2>
-<ul>
+<div class="jumbotron">
+	<div class="collapse edit-collapse show">
+		<h1>{{name}}</h1>
+		<p class="lead">{{description}}</p>
+		<button type="button" class="btn btn-primary" data-toggle="collapse" data-target=".edit-collapse">Edit</button>
+	</div>
+	<div class="collapse edit-collapse">
+		<div class="card card-body">
+			<form action="/lists/{{id}}" method="POST">
+				<div class="form-group">
+					<label for="listRenameInput">Checklist name</label>
+					<input type="text" class="form-control" placeholder="name" name="name" value="{{name}}">
+					<small class="form-text text-muted">This name needs to be unique</small>
+				</div>
+				<div class="form-group">
+					<label for="listRenameInput">Description</label>
+					<textarea class="form-control" id="exampleFormControlTextarea1" name="description" rows="3">{{description}}</textarea>
+				</div>
+				<button type="submit" class="btn btn-primary">Save changes</button>
+				<button type="button" class="btn btn-secondary" data-toggle="collapse" data-target=".edit-collapse">Cancel</button>
+				<button type="button" class="btn btn-danger" id="deleteButton" style="float: right;">Delete</button>
+			</form>
+			<form action="/lists/{{id}}/delete" method="POST" id="deleteForm">
+			</form>
+		</div>
+	</div>
+</div>
+<ul class="list-group">
 	{{#each items}}
-	<li class="item" data-id="{{id}}" data-order="{{extra.order}}">
-		<input class="completed" type="checkbox" {{#if completed}}checked{{/if}}>
-		{{title}}
-		<form action="/lists/{{../id}}/items/{{id}}/delete" method="POST">
-		<button type="submit">Delete</button>
+	<li class="item list-group-item" data-id="{{id}}" data-order="{{extra.order}}">
+		<form class="form-inline" action="/lists/{{../id}}/items/{{id}}/delete" method="POST">
+			<div class="form-check mb-2 mr-sm-2">
+				<input class="completed" type="checkbox" id="checkbox{{id}}" {{#if completed}}checked{{/if}}>
+				<label type="checkbox" for="checkbox{{id}}">{{title}}</label>
+			</div>
+			<button type="submit" class="btn btn-danger mb-2" style="float: right;">Delete <span class="fa fa-trash"></span></button>
 		</form>
 	</li>
 	{{/each}}
-	<li>
-		<form action="/lists/{{id}}/add" method="POST">
-			<input type="text" placeholder="text" name="title">
-			<button type="submit">Add item</button>
+	<li class="list-group-item">
+		<form class="form-inline" action="/lists/{{id}}/add" method="POST">
+			<input type="text" placeholder="text" name="title" class="form-control">
+			<button type="submit" class="btn btn-primary">Add item</button>
 		</form>
 	</li>
 </ul>
@@ -35,8 +48,10 @@
 <script>
 $(document).ready(function() {
 	$(".item .completed").change(function() {
-		var itemId = $(this).parent(".item").data("id");
+		var itemId = $(this).parents(".item").data("id");
+		console.log(itemId, this.checked);
 		$.post("/lists/{{id}}/items/" + itemId, { completed: this.checked });
 	});
+	$("#deleteButton").click(function() { $("#deleteForm").submit() });
 });
 </script>

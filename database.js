@@ -2,6 +2,7 @@ const orm = require('orm')
 module.exports = (db, models, next) => {
 	models.lists = db.define('lists', {
 		name: { type: 'text', unique: true },
+		description: { type: 'text' },
 	}, {
 		validations: {
 			name: orm.enforce.ranges.length(1, undefined, 'missing'),
