@@ -1,0 +1,42 @@
+<h1> List: {{name}} </h1>
+
+<h2> Edit </h2>
+
+<form action="/lists/{{id}}" method="POST">
+	Name: <input type="text" placeholder="name" name="name" value="{{name}}">
+	<button type="submit">Update</button>
+</form>
+
+<form action="/lists/{{id}}/delete" method="POST">
+	<button type="submit">Delete</button>
+</form>
+
+
+
+<h2>Items</h2>
+<ul>
+	{{#each items}}
+	<li class="item" data-id="{{id}}" data-order="{{extra.order}}">
+		<input class="completed" type="checkbox" {{#if completed}}checked{{/if}}>
+		{{title}}
+		<form action="/lists/{{../id}}/items/{{id}}/delete" method="POST">
+		<button type="submit">Delete</button>
+		</form>
+	</li>
+	{{/each}}
+	<li>
+		<form action="/lists/{{id}}/add" method="POST">
+			<input type="text" placeholder="text" name="title">
+			<button type="submit">Add item</button>
+		</form>
+	</li>
+</ul>
+
+<script>
+$(document).ready(function() {
+	$(".item .completed").change(function() {
+		var itemId = $(this).parent(".item").data("id");
+		$.post("/lists/{{id}}/items/" + itemId, { completed: this.checked });
+	});
+});
+</script>

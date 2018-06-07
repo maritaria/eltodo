@@ -1,0 +1,14 @@
+<h1>Lists</h1>
+
+<form action="/lists/new" method="POST">
+	<input type="text" placeholder="name" name="name">
+	<button type="submit">Create</button>
+</form>
+
+<ul>
+{{#each lists}}
+	<li>
+		<a href="/lists/{{id}}">{{name}}</a>
+	</li>
+{{/each}}
+</ul>
