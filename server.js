@@ -40,14 +40,18 @@ app.get('/lists', (req, res, next) => {
 	
 	req.models.lists.allAsync().then((lists)=> {
 		var matchingList = [];
+		var queryUsed = false;
 		if (req.query.search != undefined) {
-			var searchWords = req.query.search.split(' ');
+			queryUsed = true;
+			var searchWords = req.query.search.toUpperCase().split(' ');
 			console.log(searchWords);
 			// perform search on items
 			lists.forEach((list) => {
-				var matchWords = list.name.split();
-				matchWords = matchWords.concat(list.description.split());
-				list.items.forEach((item) => { matchWords = matchWords.concat(item.title.split()); });
+				var matchWords = list.name.toUpperCase().split(' ');
+				if (list.description) {
+					matchWords = matchWords.concat(list.description.toUpperCase().split(' '));
+				}
+				list.items.forEach((item) => { matchWords = matchWords.concat(item.title.toUpperCase().split(' ')); });
 				console.log(matchWords);
 				var matchedAny = false;
 				matchWords.forEach((matchWord) => {
@@ -71,7 +75,7 @@ app.get('/lists', (req, res, next) => {
 			matchingList = lists;
 		}
 		
-		res.render('lists/list', { query: req.query.search, lists: matchingList });
+		res.render('lists/list', { query: req.query.search, queryUsed: queryUsed, lists: matchingList });
 	}).catch(next);
 	
 });
@@ -87,7 +91,8 @@ app.post('/lists/new', (req, res, next) => {
 app.get('/lists/:id', (req, res, next) => {
 	req.models.lists.getAsync(req.params.id)
 		.then((list) => {
-			console.log(JSON.stringify(list));
+			list.items.sort((a, b) => a.order - b.order);
+			console.log(JSON.stringify(list.items));
 			res.render('lists/edit', list);
 		}).catch(next);
 });
@@ -98,8 +103,16 @@ app.post('/lists/:id', (req, res, next) => {
 			list.name = req.body.name;
 			list.description = req.body.description;
 			list.saveAsync().then(() => {
-				res.render('lists/edit', list);
-			});
+				var order = JSON.parse(req.body.order);
+				console.log(order);
+				var counter = 0;
+				var promises = [];
+				list.getItems().each((item) => {
+					item.order = order.indexOf(item.id);
+					promises.push(item.saveAsync());
+				});
+				return Promise.all(promises)
+			}).then(() => res.redirect("/lists/" + req.params.id));
 		}).catch(next);
 });
 
@@ -108,8 +121,9 @@ app.post('/lists/:id/add', (req, res, next) => {
 		.then((list) => {
 			req.models.items.createAsync({
 				title: req.body.title,
+				order: list.items.length + 1,
 			}).then((item) => {
-				list.addItems(item, { order: list.items.length });
+				list.addItems(item);
 				return list.saveAsync()
 			}).then((list) => {
 				res.redirect('/lists/' + list.id);
@@ -143,24 +157,6 @@ app.post('/lists/:list_id/items/:item_id/delete', (req, res, next) => {
 		.then((item) => item.removeAsync())
 		.then(() => res.redirect("/lists/" + req.params.list_id))
 		.catch(next);
-});
-
-
-// login
-app.get('/auth', (req, res, next) => {
-	
-});
-
-app.post('/auth/login', (req, res, next) => {
-	
-});
-
-app.post('/auth/register', (req, res, next) => {
-	
-});
-
-app.get('/auth/logout', (req, res, next) => {
-	
 });
 
 // final handler, gets called when previous things passed an error

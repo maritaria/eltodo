@@ -11,14 +11,13 @@ module.exports = (db, models, next) => {
 	models.items = db.define('items', {
 		title: String,
 		completed: { type: 'boolean', defaultValue: false },
+		order: { type: 'integer', defaultValue: 1000 },
 	}, {
 		validations: {
 			title: orm.enforce.ranges.length(1, undefined, 'missing'),
 		},
 	});
-	models.lists.hasMany('items', models.items, {
-		order: { type: 'integer' },
-	}, {
+	models.lists.hasMany('items', models.items, {}, {
 		key: true,
 		autoFetch: true,
 		reverse: 'list',

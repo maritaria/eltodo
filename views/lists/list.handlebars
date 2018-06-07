@@ -1,3 +1,15 @@
+<h1>Lists{{#if queryUsed}} with '{{query}}'{{/if}}</h1>
+
+<ul>
+{{#each lists}}
+	<li>
+		<a href="/lists/{{id}}">{{name}} ({{items.length}} items)</a>
+	</li>
+{{/each}}
+</ul>
+
+<h1>Create new list</h1>
+
 <div class="card">
 	<div class="card-body">
 	<form action="/lists/new" method="POST">
@@ -12,13 +24,3 @@
 	</form>
 	</div>
 </div>
-
-<h1>Lists</h1>
-
-<ul>
-{{#each lists}}
-	<li>
-		<a href="/lists/{{id}}">{{name}} ({{items.length}} items)</a>
-	</li>
-{{/each}}
-</ul>

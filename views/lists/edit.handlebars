@@ -6,7 +6,7 @@
 	</div>
 	<div class="collapse edit-collapse">
 		<div class="card card-body">
-			<form action="/lists/{{id}}" method="POST">
+			<form action="/lists/{{id}}" method="POST" id="editForm">
 				<div class="form-group">
 					<label for="listRenameInput">Checklist name</label>
 					<input type="text" class="form-control" placeholder="name" name="name" value="{{name}}">
@@ -16,7 +16,7 @@
 					<label for="listRenameInput">Description</label>
 					<textarea class="form-control" id="exampleFormControlTextarea1" name="description" rows="3">{{description}}</textarea>
 				</div>
-				<button type="submit" class="btn btn-primary">Save changes</button>
+				<button type="submit" class="btn btn-primary" id="saveButton">Save changes</button>
 				<button type="button" class="btn btn-secondary" data-toggle="collapse" data-target=".edit-collapse">Cancel</button>
 				<button type="button" class="btn btn-danger" id="deleteButton" style="float: right;">Delete</button>
 			</form>
@@ -25,11 +25,15 @@
 		</div>
 	</div>
 </div>
-<ul class="list-group">
+<ol class="list-group" id="sortable">
 	{{#each items}}
 	<li class="item list-group-item" data-id="{{id}}" data-order="{{extra.order}}">
 		<form class="form-inline" action="/lists/{{../id}}/items/{{id}}/delete" method="POST">
+			<div class="collapse edit-collapse">
+				<i class="icon-move fas fa-sort" style="font-size:40px;"></i>
+			</div>
 			<div class="form-check mb-2 mr-sm-2">
+				
 				<input class="completed" type="checkbox" id="checkbox{{id}}" {{#if completed}}checked{{/if}}>
 				<label type="checkbox" for="checkbox{{id}}">{{title}}</label>
 			</div>
@@ -43,7 +47,7 @@
 			<button type="submit" class="btn btn-primary">Add item</button>
 		</form>
 	</li>
-</ul>
+</ol>
 
 <script>
 $(document).ready(function() {
@@ -53,5 +57,43 @@ $(document).ready(function() {
 		$.post("/lists/{{id}}/items/" + itemId, { completed: this.checked });
 	});
 	$("#deleteButton").click(function() { $("#deleteForm").submit() });
+	console.log($("#sortable").sortable({
+		handle: 'i.icon-move',
+		onDrop: function($item, container, _super) {
+			// order changes, post changes
+			var order = [];
+			console.log($(container).sortable("serialize").get());
+			_super($item, container);
+		},
+	}));
+	$("#editForm").submit(function() {
+		var order = $("#sortable .item").map(function() {
+			return $(this).data("id");
+		}).get();
+		var data = $("<input type='hidden' name='order'/>");
+		data.val(JSON.stringify(order));
+		$(this).append(data);
+		return true;
+	});
 });
 </script>
+<style>
+body.dragging, body.dragging * {
+  cursor: move !important;
+}
+
+.dragged {
+  position: absolute;
+  opacity: 0.5;
+  z-index: 2000;
+}
+
+ol.example li.placeholder {
+  position: relative;
+  /** More li styles **/
+}
+ol.example li.placeholder:before {
+  position: absolute;
+  /** Define arrowhead **/
+}
+</style>
