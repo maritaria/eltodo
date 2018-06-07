@@ -7,6 +7,11 @@ module.exports = (db, models, next) => {
 		validations: {
 			name: orm.enforce.ranges.length(1, undefined, 'missing'),
 		},
+		methods: {
+			completionCount: function() {
+				return this.items.filter((item) => item.completed).length;
+			},
+		},
 	});
 	models.items = db.define('items', {
 		title: String,
